@@ -1,11 +1,55 @@
 const express = require("express");
 const router = express.Router();
 const { db } = require("../firebase");
+const formidable = require("formidable");
+const fs = require("fs");
+import { extractCouponsFromDocument } from "../processDocument";
 
 const PLATFORM_WEIGHT = 0.8;
 const CATEGORY_WEIGHT = 0.15;
 
 // POST /api/coupons
+router.post("/upload-coupon-img", (req, res) => {
+  const form = formidable({ uploadDir: "./uploads", keepExtensions: true });
+
+  form.parse(req, async (err, fields, files) => {
+    if (err) return res.status(500).json({ error: "Form parsing failed" });
+
+    const uid = fields.uid;
+    const image = files.image;
+
+    if (!uid || !image) {
+      return res.status(400).json({ error: "Image and UID are required" });
+    }
+
+    try {
+      const filePath = image[0]?.filepath || image.filepath;
+
+      const result = await extractCouponsFromDocument(filePath);
+
+      if (result) {
+        await db.collection("coupons").add({
+          owner_uid: uid,
+          platform: result.platform,
+          result: result.category,
+          description:result.summary,
+          image: filePath,
+          result:result.value,
+          coupon_code:result.coupon_code,
+          expiry_date: new Date(expiry_date).toISOString(),
+          createdAt: new Date().toISOString(),
+        });
+      }
+
+      fs.unlinkSync(filePath); // delete file after processing (optional)
+      res.json({ result });
+    } catch (err) {
+      console.error("Error:", err);
+      res.status(500).json({ error: "Failed to process image" });
+    }
+  });
+});
+
 router.post("/upload-coupon", async (req, res) => {
   const { platform, value, expiry_date,category, description, image, uid, coupon_code } = req.body;
 
@@ -48,6 +92,35 @@ router.post("/upload-coupon", async (req, res) => {
     res.status(201).json({ message: "Coupon uploaded", id: docRef.id });
   } catch (err) {
     res.status(500).json({ error: "Failed to upload coupon" });
+  }
+});
+
+router.put("/edit-coupon", async (req, res) => {
+  const { couponId, updates } = req.body;
+
+  if (!couponId || !updates || typeof updates !== "object") {
+    return res
+      .status(400)
+      .json({ error: "couponId and updates object are required" });
+  }
+
+  try {
+    const couponRef = db.collection("coupons").doc(couponId);
+    const doc = await couponRef.get();
+
+    if (!doc.exists) {
+      return res.status(404).json({ error: "Coupon not found" });
+    }
+
+    await couponRef.update(updates);
+
+    res.json({
+      message: "Coupon updated successfully",
+      updatedFields: updates,
+    });
+  } catch (err) {
+    console.error("Error editing coupon:", err);
+    res.status(500).json({ error: "Failed to update coupon" });
   }
 });
 

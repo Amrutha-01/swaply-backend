@@ -2,20 +2,18 @@ const express = require("express");
 const router = express.Router();
 const { db } = require("../firebase");
 
-// [
-//   {
-//     "id": "abc123",
-//     "user1": "uid1",
-//     "user2": "uid2",
-//     "user1_coupon": "coupA",
-//     "user2_coupon": "coupB",
-//     "status": "pending",
-//     "confirmedBy": [],
-//     "room_id": "room123"
-//   },
-//   ...
-// ]
-
+// {
+//   id: "abc123",    
+//   user1: "uid_abc123",        
+//   user2: "uid_xyz456",        
+//   user1_coupons: ["coup1", "coup2"],   
+//   user2_coupons: ["coupX"],           
+//   room_id: "room123",          
+//   status: "pending",          
+//   confirmedBy: [],             
+//   confirmedAt: null,           
+//   createdAt: Timestamp       
+// }
 
 router.get("/:uid", async (req, res) => {
   try {
@@ -44,17 +42,34 @@ router.get("/:uid", async (req, res) => {
   }
 });
 
+// 🔁 POST new trade with multiple coupons
 router.post("/upload-trade", async (req, res) => {
   try {
-    const { user1, user2, user1_coupon, user2_coupon, room_id } = req.body;
+    const {
+      user1,
+      user2,
+      user1_coupons, // expect: ["coupA", "coupB"]
+      user2_coupons, // expect: ["coupX"]
+      room_id,
+    } = req.body;
+
+    // Validate input
+    if (
+      !user1 ||
+      !user2 ||
+      !Array.isArray(user1_coupons) ||
+      !Array.isArray(user2_coupons)
+    ) {
+      return res.status(400).json({ error: "Missing or invalid trade fields" });
+    }
 
     const tradeDoc = {
       user1,
       user2,
-      user1_coupon,
-      user2_coupon,
+      user1_coupons,
+      user2_coupons,
       room_id,
-      status: "pending", // or "offered"
+      status: "pending",
       createdAt: new Date(),
       confirmedBy: [],
       confirmedAt: null,
@@ -67,3 +82,5 @@ router.post("/upload-trade", async (req, res) => {
     res.status(500).json({ error: "Failed to create trade" });
   }
 });
+
+module.exports = router;

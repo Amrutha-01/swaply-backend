@@ -1,11 +1,7 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const fs = require("fs");
 const path = require("path");
-
-
-const API_KEY = "AIzaSyA4skE0N_8l2DLcliAIdEkKlyvEEwTrqq0"; 
-const aifile = 'gt.jpeg'; 
-
+require("dotenv").config();
 
 const PROMPT_TEMPLATE = `
 You are an advanced document parsing AI engine. Your sole function is to analyze the provided document and extract all promotional coupon offers.
@@ -13,8 +9,10 @@ You are an advanced document parsing AI engine. Your sole function is to analyze
 You MUST return the data as a single, valid JSON object that contains one key: "coupons". This key's value must be a JSON array. Each object within the array must conform to the following exact schema:
 
 - "platform": (string) The name of the merchant or platform.
+- "category": (string) The type of coupons (example: Shopping, Food, etc)
 - "summary": (string) A concise one-sentence description of the offer.
 - "coupon_code": (string | null) The coupon code, or null if not present.
+- "value": (string) The discount rate or value of the coupon (eg: 100 rupees, 10%,etc)
 - "expiry_date": (string) The expiration date in "YYYY-MM-DD" format.
 - "source_document": (string) The name of the file this was extracted from.
 
@@ -26,10 +24,10 @@ Only return the raw JSON object without any extra text or markdown formatting.`;
  * @param {string} filePath - The path to the local document (image or PDF).
  * @returns {Promise<object>} A promise that resolves to the parsed JSON object from the AI.
  */
-async function extractCouponsFromDocument(filePath) {
+export async function extractCouponsFromDocument(filePath) {
   console.log(`Processing document with Gemini: ${filePath}`);
 
-  const genAI = new GoogleGenerativeAI(API_KEY);
+  const genAI = new GoogleGenerativeAI(process.env.API_KEY);
   const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro-latest" });
 
   const mimeTypeMap = {
@@ -79,11 +77,4 @@ async function extractCouponsFromDocument(filePath) {
     }
     return { error: "Failed to extract data from the document." };
   }
-}
-
-
-if (!fs.existsSync(aifile)) {
-    console.error(`Error: File not found at '${aifile}'. Please create it or change the filename.`);
-} else {
-  extractCouponsFromDocument(aifile);
 }

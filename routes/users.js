@@ -85,4 +85,29 @@ router.put("/wallet", async (req, res) => {
   }
 });
 
+router.put("/update-tokens", async (req, res) => {
+  const { uid, tokens } = req.body;
+
+  if (!uid || typeof tokens !== "number") {
+    return res
+      .status(400)
+      .json({ error: "Valid UID and numeric tokens are required" });
+  }
+
+  try {
+    const userRef = db.collection("users").doc(uid);
+    const userSnap = await userRef.get();
+
+    if (!userSnap.exists) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    await userRef.update({ tokens });
+    res.json({ message: "Tokens updated successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to update tokens" });
+  }
+});
+
 module.exports = router;
