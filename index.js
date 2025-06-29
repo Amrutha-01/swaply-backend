@@ -114,6 +114,6 @@ app.use("/api/coupons", require("./routes/coupons"));
 app.use("/api/trades", require("./routes/trades"));
 
 // 🔹 Start server
-server.listen(process.env.PORT, () => {
+server.listen(process.env.PORT || 5000, () => {
   console.log(`Server listening on port ${process.env.PORT}`);
 });
