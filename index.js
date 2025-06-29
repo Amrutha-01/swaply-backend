@@ -5,7 +5,7 @@ require("dotenv").config();
 const { Server } = require("socket.io");
 const admin = require("firebase-admin");
 const usersRouter = require("./routes/users");
-import { db } from "./firebase";
+const {db}= require("./firebase")
 
 const app = express();
 app.use(cors());

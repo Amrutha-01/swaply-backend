@@ -20,6 +20,8 @@
     "formidable": "^3.5.4",
     "fs": "^0.0.1-security",
     "http": "^0.0.1-security",
+    "mime-types": "^3.0.1",
+    "multer": "^2.0.1",
     "path": "^0.12.7",
     "socket.io": "^4.8.1"
   }
